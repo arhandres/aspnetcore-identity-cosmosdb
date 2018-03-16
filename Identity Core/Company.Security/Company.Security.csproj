@@ -8,4 +8,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Company.DataAccess\Company.DataAccess.csproj" />
+    <ProjectReference Include="..\Company.Model\Company.Model.csproj" />
+  </ItemGroup>
+
 </Project>
