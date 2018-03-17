@@ -1,5 +1,7 @@
 using Company.DataAccess;
 using Company.DataAccess.Core;
+using Company.Model;
+using Company.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -49,12 +51,20 @@ namespace Company.Test
             {
 
                 var userRepository = _serviceProvider.GetRequiredService<IUserRepository>();
+                
+                var userName = "arhandres@hotmail.com";
+                var password = "Password11;";
 
-                userRepository.CreateUser(new Model.User()
+                var user = new User()
                 {
-                    UserName = "arhandres@"
-                });
+                    Id = 1,
+                    UserName = userName,
+                    PasswordHash = ApplicationPasswordHasher.CreateHashPassword(password)
+                };
 
+                var success = userRepository.CreateUser(user);
+
+                Assert.AreEqual(true, success);
             }
             catch (Exception e)
             {

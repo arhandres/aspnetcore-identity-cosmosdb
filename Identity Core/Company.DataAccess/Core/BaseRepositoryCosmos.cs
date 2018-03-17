@@ -14,60 +14,76 @@ namespace Company.DataAccess.Core
 {
     public abstract class BaseRepositoryCosmos<T> : BaseRepository<T> where T : class
     {
-        private string _databaseName = null;
+        private CosmosConfiguration _configuration = null;
 
-        private DocumentClient _documentClient = null;
-        private DocumentCollection _documentCollection = null;
+        private Lazy<DocumentClient> _documentClient = null;
+        private Lazy<DocumentCollection> _documentCollection = null;
 
         protected DocumentClient Context
         {
             get
             {
-                return _documentClient;
+                return _documentClient?.Value;
+            }
+        }
+
+        protected DocumentCollection Collection
+        {
+            get
+            {
+                return _documentCollection?.Value;
             }
         }
 
         public BaseRepositoryCosmos(IOptions<CosmosConfiguration> options)
         {
-            var configuration = options.Value;
+            _configuration = options.Value;
 
-            _databaseName = configuration.DatabaseName;
+            _documentClient = new Lazy<DocumentClient>(() => this.CreateDocumentClient());
+            _documentCollection = new Lazy<DocumentCollection>(() => AsyncHelpers.RunSync<DocumentCollection>(() => this.CreateDocumentCollection()));
+        }
 
-            _documentClient = new DocumentClient(new Uri(configuration.EndpointUri), configuration.PrimaryKey, new JsonSerializerSettings()
+        private async Task<DocumentCollection> CreateDocumentCollection()
+        {
+            var name = typeof(T).Name;
+            var databaseUri = UriFactory.CreateDatabaseUri(_configuration.DatabaseName);
+
+            var collection = new DocumentCollection();
+            collection.Id = name;
+            collection.PartitionKey.Paths.Add("/Partition");
+
+            var result = await this.Context.CreateDocumentCollectionIfNotExistsAsync(databaseUri, collection);
+
+            return collection;
+        }
+
+        private DocumentClient CreateDocumentClient()
+        {
+            var client = new DocumentClient(new Uri(_configuration.EndpointUri), _configuration.PrimaryKey, new JsonSerializerSettings()
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 
-            this.CreateDatabase();
-            this.CreateCollection();
+            AsyncHelpers.RunSync(() => this.CreateDatabase(client));
+
+            return client;
         }
 
-        protected ResourceResponse<Database> CreateDatabase()
+        protected async Task<ResourceResponse<Database>> CreateDatabase(DocumentClient client)
         {
-            var response = _documentClient.CreateDatabaseIfNotExistsAsync(new Microsoft.Azure.Documents.Database()
+            var response = await client.CreateDatabaseIfNotExistsAsync(new Microsoft.Azure.Documents.Database()
             {
-                Id = _databaseName
-            }).Result;
+                Id = _configuration.DatabaseName
+            });
 
             return response;
         }
 
-        protected void CreateCollection()
-        {
-            var name = typeof(T).Name;
-            var databaseUri = UriFactory.CreateDatabaseUri(_databaseName);
-
-            _documentCollection = new DocumentCollection();
-            _documentCollection.Id = name;
-
-            _documentClient.CreateDocumentCollectionAsync(databaseUri, _documentCollection);
-        }
-
         protected override T GetFirstOrDefault(Func<T, bool> predicate)
         {
-            var uri = UriFactory.CreateDocumentCollectionUri(_databaseName, _documentCollection.Id);
+            var uri = UriFactory.CreateDocumentCollectionUri(_configuration.DatabaseName, this.Collection.Id);
 
-            var item = _documentClient.CreateDocumentQuery<T>(uri)
+            var item = this.Context.CreateDocumentQuery<T>(uri)
                     .Where(predicate)
                     .AsEnumerable()
                     .FirstOrDefault();
@@ -77,9 +93,9 @@ namespace Company.DataAccess.Core
 
         protected override List<T> GetAll(Func<T, bool> predicate = null)
         {
-            var uri = UriFactory.CreateDocumentCollectionUri(_databaseName, _documentCollection.Id);
+            var uri = UriFactory.CreateDocumentCollectionUri(_configuration.DatabaseName, this.Collection.Id);
 
-            var query = _documentClient.CreateDocumentQuery<T>(uri);
+            var query = this.Context.CreateDocumentQuery<T>(uri);
 
             if (predicate != null)
                 return query.Where(predicate)
@@ -92,9 +108,11 @@ namespace Company.DataAccess.Core
 
         protected override async Task<bool> Upsert(T entity)
         {
-            var uri = UriFactory.CreateDocumentCollectionUri(_databaseName, _documentCollection.Id);
+            var uri = UriFactory.CreateDocumentCollectionUri(_configuration.DatabaseName, this.Collection.Id);
+            
+            var test = JsonConvert.SerializeObject(entity);
 
-            var result = await _documentClient.UpsertDocumentAsync(uri, entity);
+            var result = await this.Context.UpsertDocumentAsync(uri, entity);
 
             var success = result.StatusCode == System.Net.HttpStatusCode.Created;
 
@@ -115,9 +133,9 @@ namespace Company.DataAccess.Core
 
         protected async Task<bool> Delete(string id)
         {
-            var uri = UriFactory.CreateDocumentUri(_databaseName, _documentCollection.Id, id);
+            var uri = UriFactory.CreateDocumentUri(_configuration.DatabaseName, this.Collection.Id, id);
 
-            var result = await _documentClient.DeleteDocumentAsync(uri);
+            var result = await this.Context.DeleteDocumentAsync(uri);
 
             var success = result.StatusCode == System.Net.HttpStatusCode.Created;
 
@@ -153,5 +171,16 @@ namespace Company.DataAccess.Core
         public string PrimaryKey { get; set; }
 
         public string DatabaseName { get; set; }
+    }
+
+    public class AsyncLazy<T> : Lazy<Task<T>>
+    {
+        public AsyncLazy(Func<T> valueFactory) :
+            base(() => Task.Factory.StartNew(valueFactory))
+        { }
+
+        public AsyncLazy(Func<Task<T>> taskFactory) :
+            base(() => Task.Factory.StartNew(() => taskFactory()).Unwrap())
+        { }
     }
 }
