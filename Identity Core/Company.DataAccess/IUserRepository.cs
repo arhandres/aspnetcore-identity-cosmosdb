@@ -9,7 +9,7 @@ namespace Company.DataAccess
     public interface IUserRepository : IUserStore<User>
     {
         bool CreateUser(User user);
-        bool DeleteUser(int id);
-        User GetUserById(int id);
+        bool DeleteUser(string id);
+        User GetUserById(string id);
     }
 }

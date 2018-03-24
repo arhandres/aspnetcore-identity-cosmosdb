@@ -23,7 +23,7 @@ namespace Company.DataAccess
             return result == IdentityResult.Success;
         }
 
-        public bool DeleteUser(int id)
+        public bool DeleteUser(string id)
         {
             var user = new User()
             {
@@ -34,9 +34,9 @@ namespace Company.DataAccess
             return result == IdentityResult.Success;
         }
 
-        public User GetUserById(int id)
+        public User GetUserById(string id)
         {
-            var user = AsyncHelpers.RunSync<User>(() => this.FindByIdAsync(id.ToString(), CancellationToken.None));
+            var user = AsyncHelpers.RunSync<User>(() => this.FindByIdAsync(id, CancellationToken.None));
 
             return user;
         }
@@ -79,9 +79,7 @@ namespace Company.DataAccess
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var id = int.Parse(userId);
-
-            var user = this.GetFirstOrDefault(u => u.Id == id);
+            var user = this.GetFirstOrDefault(u => u.Id == userId);
 
             return await Task.FromResult(user);
         }

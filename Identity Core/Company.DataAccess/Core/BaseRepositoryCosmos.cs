@@ -109,10 +109,9 @@ namespace Company.DataAccess.Core
         protected override async Task<bool> Upsert(T entity)
         {
             var uri = UriFactory.CreateDocumentCollectionUri(_configuration.DatabaseName, this.Collection.Id);
-            
-            var test = JsonConvert.SerializeObject(entity);
+            //var uri = UriFactory.CreateDocumentUri(_configuration.DatabaseName, this.Collection.Id,GetIdPropertyValue(entity));
 
-            var result = await this.Context.UpsertDocumentAsync(uri, entity);
+            var result = await this.Context.CreateDocumentAsync(uri, entity);
 
             var success = result.StatusCode == System.Net.HttpStatusCode.Created;
 

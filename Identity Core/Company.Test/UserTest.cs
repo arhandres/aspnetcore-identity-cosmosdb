@@ -57,7 +57,7 @@ namespace Company.Test
 
                 var user = new User()
                 {
-                    Id = 1,
+                    Id = Guid.NewGuid().ToString(),
                     UserName = userName,
                     PasswordHash = ApplicationPasswordHasher.CreateHashPassword(password)
                 };

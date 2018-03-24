@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Company.Model
 {
-    public class User : IdentityUser<int>
+    public class User : IdentityUser<string>
     {
         public string Name { get; set; }
 
