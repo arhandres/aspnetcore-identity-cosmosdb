@@ -47,7 +47,7 @@ namespace Company.DataAccess
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var role = this.GetFirstOrDefault(r => r.Id == int.Parse(roleId));
+            var role = this.GetFirstOrDefault(r => string.Compare(r.Id, roleId, true) == 0);
 
             return Task.FromResult(role);
         }

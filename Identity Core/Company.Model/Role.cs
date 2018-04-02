@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Company.Model
 {
-    public class Role : IdentityRole<int>
+    public class Role : IdentityRole<string>
     {
     }
 }

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Company.WebSite.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class HomeController : Controller
     {
         public IActionResult Index()

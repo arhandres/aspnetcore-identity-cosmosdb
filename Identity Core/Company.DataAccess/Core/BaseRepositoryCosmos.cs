@@ -111,9 +111,9 @@ namespace Company.DataAccess.Core
             var uri = UriFactory.CreateDocumentCollectionUri(_configuration.DatabaseName, this.Collection.Id);
             //var uri = UriFactory.CreateDocumentUri(_configuration.DatabaseName, this.Collection.Id,GetIdPropertyValue(entity));
 
-            var result = await this.Context.CreateDocumentAsync(uri, entity);
+            var result = await this.Context.UpsertDocumentAsync(uri, entity);
 
-            var success = result.StatusCode == System.Net.HttpStatusCode.Created;
+            var success = result.StatusCode == System.Net.HttpStatusCode.OK || result.StatusCode == System.Net.HttpStatusCode.Created;
 
             return success;
         }

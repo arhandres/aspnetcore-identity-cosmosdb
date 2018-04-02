@@ -2,11 +2,14 @@ using Company.DataAccess;
 using Company.DataAccess.Core;
 using Company.Model;
 using Company.Security;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Company.Test
 {
@@ -37,12 +40,33 @@ namespace Company.Test
                 configuration.GetSection("CosmosConfiguration").Bind(c);
             });
 
-            serviceCollection.AddSingleton<IUserRepository, UserRepository>();
+            //serviceCollection.AddSingleton<IUserRepository, UserRepository>();
+            //serviceCollection.AddSingleton<IRoleRepository, RoleRepository>();
 
-            
+            serviceCollection.AddScoped<IUserRepository, UserRepository>();
+            serviceCollection.AddScoped<IUserStore<User>, UserRepository>();
+
+            serviceCollection.AddScoped<IRoleRepository, RoleRepository>();
+            serviceCollection.AddScoped<IRoleStore<Role>, RoleRepository>();
+
+            serviceCollection.AddScoped<IPasswordHasher<User>, ApplicationPasswordHasher>();
+            serviceCollection.AddScoped<UserManager<User>, ApplicationUserManager>();
+            serviceCollection.AddScoped<RoleManager<Role>, ApplicationRoleManager>();
+            serviceCollection.AddScoped<SignInManager<User>, ApplicationSignInManager>();
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
         }
+
+        //[TestMethod]
+        //public async Task AddToRoleAsync()
+        //{
+        //    var userRepository = _serviceProvider.GetRequiredService<IUserRepository>();
+        //    var userManager = _serviceProvider.GetRequiredService<UserManager<User>>();
+
+        //    var user = userRepository.GetUserByName("arhandres@hotmail.com");
+
+        //    var result = await userManager.AddToRoleAsync(user, "Admin");
+        //}
 
         [TestMethod]
         public void CreateUserTest()
@@ -73,8 +97,18 @@ namespace Company.Test
         }
 
         [TestMethod]
-        public void CreateRoleTest()
+        public async Task CreateRoleTest()
         {
+            var roleRepository = _serviceProvider.GetRequiredService<IRoleRepository>();
+
+            var result = await roleRepository.CreateAsync(new Role()
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "Admin",
+                NormalizedName = "Admin"
+            }, CancellationToken.None);
         }
+
+        
     }
 }

@@ -12,6 +12,8 @@ namespace Company.Model
 
         public string LastName { get; set; }
 
+        public List<string> Roles { get; set; }
+
         [JsonProperty(PropertyName = "Partition")]
         public string Tenan { get; set; }
 
