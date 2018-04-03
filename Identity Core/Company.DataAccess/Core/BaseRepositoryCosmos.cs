@@ -109,7 +109,6 @@ namespace Company.DataAccess.Core
         protected override async Task<bool> Upsert(T entity)
         {
             var uri = UriFactory.CreateDocumentCollectionUri(_configuration.DatabaseName, this.Collection.Id);
-            //var uri = UriFactory.CreateDocumentUri(_configuration.DatabaseName, this.Collection.Id,GetIdPropertyValue(entity));
 
             var result = await this.Context.UpsertDocumentAsync(uri, entity);
 

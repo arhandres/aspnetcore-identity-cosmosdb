@@ -29,6 +29,11 @@ namespace Company.WebSite.Controllers
             return View();
         }
 
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> DoLogin([FromBody]LoginViewModel model)
         {
@@ -45,11 +50,6 @@ namespace Company.WebSite.Controllers
             await _signInManager.SignOutAsync();
             
             return RedirectToAction(nameof(HomeController.Index), "Home");
-        }
-
-        public IActionResult AccessDenied()
-        {
-            return View();
         }
     }
 }
